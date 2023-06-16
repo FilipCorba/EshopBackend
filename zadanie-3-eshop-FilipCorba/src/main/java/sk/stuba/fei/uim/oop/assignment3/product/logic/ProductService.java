@@ -1,0 +1,89 @@
+package sk.stuba.fei.uim.oop.assignment3.product.logic;
+
+import sk.stuba.fei.uim.oop.assignment3.exeption.IllegalOperationException;
+import sk.stuba.fei.uim.oop.assignment3.exeption.NotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import sk.stuba.fei.uim.oop.assignment3.product.data.IProductRepository;
+import sk.stuba.fei.uim.oop.assignment3.product.data.Product;
+import sk.stuba.fei.uim.oop.assignment3.product.web.bodies.ProductEditRequest;
+import sk.stuba.fei.uim.oop.assignment3.product.web.bodies.ProductRequest;
+
+
+import java.util.List;
+
+@Service
+public class ProductService implements IProductService{
+    @Autowired
+    private IProductRepository repository;
+
+
+
+    @Override
+    public List<Product> getAll() {
+        return this.repository.findAll();
+    }
+    @Override
+    public Product create(ProductRequest request) {
+
+        return  this.repository.save(new Product(request));
+
+
+    }
+
+    @Override
+    public Product getById(long id) throws NotFoundException {
+        Product p = this.repository.findProductById(id);
+        if (p == null) {
+            throw new NotFoundException();
+        }
+        return p;
+    }
+    @Override
+    public Product update(long id, ProductEditRequest request) throws NotFoundException {
+        Product p = this.getById(id);
+        if (request.getName() != null) {
+            p.setName(request.getName());
+        }
+        if (request.getDescription() != null) {
+            p.setDescription(request.getDescription());
+        }
+
+        return this.repository.save(p);
+    }
+    @Override
+    public void delete(long id) throws NotFoundException {
+        Product p = this.getById(id);
+        this.repository.delete(p);
+    }
+
+    @Override
+    public int getAmount(long id) throws NotFoundException {
+        return this.getById(id).getAmount();
+    }
+
+    @Override
+    public int addAmount(long id, int increment) throws NotFoundException {
+        Product p = this.getById(id);
+        p.setAmount(p.getAmount() + increment);
+        this.repository.save(p);
+        return p.getAmount();
+    }
+
+
+
+
+    @Override
+    public void decreaseAmountOfProduct(Product p, int amountInCart) throws IllegalOperationException, NotFoundException {
+        if((p.getAmount()- amountInCart)<0){
+            throw new IllegalOperationException();
+        }
+        p.setAmount(p.getAmount()- amountInCart);
+        this.repository.save(p);
+        if(p.getAmount() == 0){
+            delete(p.getId());
+        }
+
+    }
+
+}
